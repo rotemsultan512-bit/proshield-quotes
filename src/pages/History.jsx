@@ -45,30 +45,39 @@ export default function History() {
       ) : quotes.length === 0 ? (
         <div className="empty">אין הצעות מחיר שמורות</div>
       ) : (
-        quotes.map(q => (
-          <div
-            className="history-item"
-            key={q.id}
-            onClick={() => navigate(`/history/${q.id}`)}
-          >
-            <div>
-              <div className="title">{q.project_name}</div>
-              <div className="meta">{q.client_name} · {formatDate(q.created_at)}</div>
+        quotes.map(q => {
+          const cost = Number(q.total_cost) || 0;
+          const client = Number(q.client_total || q.sale_total) || 0;
+          const profit = client - cost;
+          return (
+            <div
+              className="history-item"
+              key={q.id}
+              onClick={() => navigate(`/history/${q.id}`)}
+            >
+              <div style={{ flex: 1 }}>
+                <div className="title">{q.project_name}</div>
+                <div className="meta">{q.client_name} · {formatDate(q.created_at)}</div>
+                <div style={{ display: 'flex', gap: 12, marginTop: 4, fontSize: '0.8rem' }}>
+                  <span style={{ color: 'var(--text-dim)' }}>עלות: {formatCurrency(cost)}</span>
+                  <span style={{ color: 'var(--accent)', fontWeight: 600 }}>ללקוח: {formatCurrency(client)}</span>
+                  <span style={{ color: profit >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>
+                    רווח: {formatCurrency(profit)}
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  className="btn btn-red btn-sm"
+                  onClick={e => deleteQuote(e, q.id)}
+                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontWeight: 600, color: 'var(--green)' }}>
-                {formatCurrency(q.sale_total)}
-              </span>
-              <button
-                className="btn btn-red btn-sm"
-                onClick={e => deleteQuote(e, q.id)}
-                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );

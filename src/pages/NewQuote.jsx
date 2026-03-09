@@ -8,6 +8,7 @@ const emptyLine = () => ({
   qty: '',
   with_install: false,
   labor_cost: '',
+  client_price: '',
 });
 
 export default function NewQuote() {
@@ -18,8 +19,6 @@ export default function NewQuote() {
   const [projectName, setProjectName] = useState('');
   const [clientName, setClientName] = useState('');
   const [lines, setLines] = useState([emptyLine()]);
-  const [profitMode, setProfitMode] = useState('percent');
-  const [profitValue, setProfitValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(!id);
 
@@ -49,8 +48,6 @@ export default function NewQuote() {
 
       setProjectName(quote.project_name);
       setClientName(quote.client_name);
-      setProfitMode(quote.profit_mode);
-      setProfitValue(String(quote.profit_value));
       setLines(
         (qLines || []).map(l => ({
           key: l.id,
@@ -58,6 +55,7 @@ export default function NewQuote() {
           qty: String(l.qty),
           with_install: l.with_install,
           labor_cost: String(l.labor_cost || ''),
+          client_price: String(l.client_price || ''),
         }))
       );
       setLoaded(true);
@@ -71,8 +69,8 @@ export default function NewQuote() {
     return m;
   }, [products]);
 
-  // Calculate line total
-  function lineTotal(line) {
+  // Calculate line cost (my cost)
+  function lineCost(line) {
     const product = productMap[line.product_id];
     if (!product) return 0;
     const qty = Number(line.qty) || 0;
@@ -81,19 +79,39 @@ export default function NewQuote() {
     return (material + labor) * qty;
   }
 
+  // Calculate line client total
+  function lineClientTotal(line) {
+    const qty = Number(line.qty) || 0;
+    const cp = Number(line.client_price) || 0;
+    return cp * qty;
+  }
+
   // Totals
-  const totalCost = useMemo(
-    () => lines.reduce((sum, l) => sum + lineTotal(l), 0),
+  const totalMaterial = useMemo(
+    () => lines.reduce((sum, l) => {
+      const product = productMap[l.product_id];
+      if (!product) return sum;
+      return sum + product.cost_price * (Number(l.qty) || 0);
+    }, 0),
     [lines, productMap]
   );
 
-  const profitAmount = useMemo(() => {
-    const pv = Number(profitValue) || 0;
-    if (profitMode === 'percent') return totalCost * (pv / 100);
-    return pv;
-  }, [totalCost, profitMode, profitValue]);
+  const totalLabor = useMemo(
+    () => lines.reduce((sum, l) => {
+      if (!l.with_install) return sum;
+      return sum + (Number(l.labor_cost) || 0) * (Number(l.qty) || 0);
+    }, 0),
+    [lines]
+  );
 
-  const saleTotal = totalCost + profitAmount;
+  const totalCost = totalMaterial + totalLabor;
+
+  const clientTotal = useMemo(
+    () => lines.reduce((sum, l) => sum + lineClientTotal(l), 0),
+    [lines]
+  );
+
+  const profit = clientTotal - totalCost;
 
   // Update a line
   function updateLine(index, field, value) {
@@ -123,10 +141,11 @@ export default function NewQuote() {
     const quoteData = {
       project_name: projectName.trim(),
       client_name: clientName.trim(),
-      profit_mode: profitMode,
-      profit_value: Number(profitValue) || 0,
+      profit_mode: 'fixed',
+      profit_value: Math.round(profit * 100) / 100,
       total_cost: Math.round(totalCost * 100) / 100,
-      sale_total: Math.round(saleTotal * 100) / 100,
+      sale_total: Math.round(clientTotal * 100) / 100,
+      client_total: Math.round(clientTotal * 100) / 100,
     };
 
     let quoteId = id ? Number(id) : null;
@@ -147,7 +166,8 @@ export default function NewQuote() {
         qty: Number(l.qty) || 0,
         with_install: l.with_install,
         labor_cost: l.with_install ? (Number(l.labor_cost) || 0) : 0,
-        line_total: Math.round(lineTotal(l) * 100) / 100,
+        client_price: Number(l.client_price) || 0,
+        line_total: Math.round(lineCost(l) * 100) / 100,
       }));
 
     if (lineRows.length > 0) {
@@ -166,8 +186,6 @@ export default function NewQuote() {
     setProjectName('');
     setClientName('');
     setLines([emptyLine()]);
-    setProfitMode('percent');
-    setProfitValue('');
     navigate('/');
   }
 
@@ -208,13 +226,23 @@ export default function NewQuote() {
 
       {lines.map((line, i) => {
         const product = productMap[line.product_id];
-        const lt = lineTotal(line);
+        const myCost = lineCost(line);
+        const clientLine = lineClientTotal(line);
         return (
           <div className="line-card" key={line.key}>
             <div className="line-header">
               <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>שורה {i + 1}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {lt > 0 && <span className="line-total">{formatCurrency(lt)}</span>}
+                {myCost > 0 && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+                    עלות: {formatCurrency(myCost)}
+                  </span>
+                )}
+                {clientLine > 0 && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 600 }}>
+                    ללקוח: {formatCurrency(clientLine)}
+                  </span>
+                )}
                 {lines.length > 1 && (
                   <button
                     className="btn btn-red btn-sm"
@@ -256,6 +284,18 @@ export default function NewQuote() {
               </div>
 
               <div>
+                <label>מחיר ללקוח ליח׳ ₪</label>
+                <input
+                  type="number"
+                  value={line.client_price}
+                  onChange={e => updateLine(i, 'client_price', e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+
+              <div>
                 <label>&nbsp;</label>
                 <label className="toggle">
                   <input
@@ -270,7 +310,7 @@ export default function NewQuote() {
 
               {line.with_install && (
                 <div>
-                  <label>עלות עובד ליחידה ₪</label>
+                  <label>עלות עובד למטר ₪</label>
                   <input
                     type="number"
                     value={line.labor_cost}
@@ -286,47 +326,33 @@ export default function NewQuote() {
         );
       })}
 
-      <button className="btn btn-primary btn-block" onClick={addLine} style={{ marginBottom: 16 }}>
+      <button className="btn btn-orange btn-block" onClick={addLine} style={{ marginBottom: 16 }}>
         + הוסף שורה
       </button>
-
-      {/* Profit */}
-      <div className="card">
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-          <div style={{ flex: 1 }}>
-            <label>סוג רווח</label>
-            <select value={profitMode} onChange={e => setProfitMode(e.target.value)}>
-              <option value="percent">אחוז %</option>
-              <option value="fixed">סכום קבוע ₪</option>
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label>{profitMode === 'percent' ? 'אחוז רווח' : 'סכום רווח ₪'}</label>
-            <input
-              type="number"
-              value={profitValue}
-              onChange={e => setProfitValue(e.target.value)}
-              placeholder="0"
-              min="0"
-              step="0.1"
-            />
-          </div>
-        </div>
-      </div>
 
       {/* Summary */}
       <div className="summary">
         <div className="summary-row">
-          <span>עלות כוללת</span>
+          <span>עלות חומר</span>
+          <span>{formatCurrency(totalMaterial)}</span>
+        </div>
+        {totalLabor > 0 && (
+          <div className="summary-row">
+            <span>עלות עובדים</span>
+            <span>{formatCurrency(totalLabor)}</span>
+          </div>
+        )}
+        <div className="summary-row" style={{ fontWeight: 600, borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 4 }}>
+          <span>עלות כוללת שלי</span>
           <span>{formatCurrency(totalCost)}</span>
         </div>
-        <div className="summary-row">
-          <span>רווח {profitMode === 'percent' && profitValue ? `(${profitValue}%)` : ''}</span>
-          <span>{formatCurrency(profitAmount)}</span>
+        <div className="summary-row client-total" style={{ marginTop: 8 }}>
+          <span>סה״כ ללקוח</span>
+          <span>{formatCurrency(clientTotal)}</span>
         </div>
-        <div className="summary-row total">
-          <span>מחיר ללקוח</span>
-          <span>{formatCurrency(saleTotal)}</span>
+        <div className={`summary-row total ${profit >= 0 ? 'profit-positive' : 'profit-negative'}`}>
+          <span>רווח</span>
+          <span>{formatCurrency(profit)}</span>
         </div>
       </div>
 
