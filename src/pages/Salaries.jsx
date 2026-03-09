@@ -22,6 +22,11 @@ function getMonthOptions() {
   return options;
 }
 
+function getDaysInMonth(yearMonth) {
+  const [y, m] = yearMonth.split('-').map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
 export default function Salaries() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,6 +40,7 @@ export default function Salaries() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [selectedDay, setSelectedDay] = useState(() => new Date().getDate());
   const [mode, setMode] = useState('install');
   const [lines, setLines] = useState([emptyLine()]);
   const [saving, setSaving] = useState(false);
@@ -44,6 +50,18 @@ export default function Salaries() {
   const [entries, setEntries] = useState([]);
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
+
+  // Day options based on selected month
+  const dayOptions = useMemo(() => {
+    const max = getDaysInMonth(selectedMonth);
+    return Array.from({ length: max }, (_, i) => i + 1);
+  }, [selectedMonth]);
+
+  // Clamp day when month changes
+  useEffect(() => {
+    const maxDay = getDaysInMonth(selectedMonth);
+    setSelectedDay(prev => prev > maxDay ? maxDay : prev);
+  }, [selectedMonth]);
 
   // Load products + workers
   useEffect(() => {
@@ -66,7 +84,7 @@ export default function Salaries() {
       .from('salaries')
       .select('*, workers(name)')
       .eq('month', selectedMonth)
-      .order('created_at', { ascending: false });
+      .order('work_date', { ascending: false });
     setEntries(data || []);
   }
 
@@ -89,6 +107,9 @@ export default function Salaries() {
 
       setSelectedWorker(String(salary.worker_id));
       setSelectedMonth(salary.month);
+      if (salary.work_date) {
+        setSelectedDay(new Date(salary.work_date + 'T00:00:00').getDate());
+      }
       setMode(salary.mode);
       setLines(
         (sLines || []).map(l => ({
@@ -155,6 +176,7 @@ export default function Salaries() {
     const salaryData = {
       worker_id: Number(selectedWorker),
       month: selectedMonth,
+      work_date: `${selectedMonth}-${String(selectedDay).padStart(2, '0')}`,
       mode,
       total: Math.round(grandTotal * 100) / 100,
     };
@@ -217,13 +239,23 @@ export default function Salaries() {
 
       {/* Month + Worker selection */}
       <div className="card">
-        <div style={{ marginBottom: 10 }}>
-          <label>חודש</label>
-          <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
-            {monthOptions.map(m => (
-              <option key={m.val} value={m.val}>{m.label}</option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div style={{ flex: 2 }}>
+            <label>חודש</label>
+            <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
+              {monthOptions.map(m => (
+                <option key={m.val} value={m.val}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label>יום עבודה</label>
+            <select value={selectedDay} onChange={e => setSelectedDay(Number(e.target.value))}>
+              {dayOptions.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div style={{ marginBottom: 10 }}>
@@ -395,7 +427,8 @@ export default function Salaries() {
               <div style={{ flex: 1 }}>
                 <div className="title">{e.workers?.name || 'עובד'}</div>
                 <div className="meta">
-                  {e.mode === 'install' ? 'התקנה' : 'אספקה'}
+                  {e.work_date && new Date(e.work_date + 'T00:00:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  {' · '}{e.mode === 'install' ? 'התקנה' : 'אספקה'}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
