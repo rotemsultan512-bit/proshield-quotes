@@ -8,6 +8,9 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app">
+        <div className="app-bar">
+          <img src="/proshield-icon.png" alt="ProShield" className="app-logo" />
+        </div>
         <div className="page">
           <Routes>
             <Route path="/" element={<NewQuote />} />

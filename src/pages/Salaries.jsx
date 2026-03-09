@@ -367,7 +367,7 @@ export default function Salaries() {
       {/* Save */}
       <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
         <button
-          className="btn btn-primary btn-block"
+          className="btn btn-orange btn-block"
           onClick={save}
           disabled={saving}
         >
@@ -399,7 +399,7 @@ export default function Salaries() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontWeight: 600, color: 'var(--accent)' }}>
+                <span style={{ fontWeight: 600, color: 'var(--orange)' }}>
                   {formatCurrency(e.total)}
                 </span>
                 <button

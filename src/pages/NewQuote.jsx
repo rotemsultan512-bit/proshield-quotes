@@ -6,6 +6,7 @@ const emptyLine = () => ({
   key: Date.now() + Math.random(),
   product_id: '',
   qty: '',
+  unit: 'מ"א',
   with_install: false,
   labor_cost: '',
   client_price: '',
@@ -53,6 +54,7 @@ export default function NewQuote() {
           key: l.id,
           product_id: String(l.product_id),
           qty: String(l.qty),
+          unit: l.unit || 'מ"א',
           with_install: l.with_install,
           labor_cost: String(l.labor_cost || ''),
           client_price: String(l.client_price || ''),
@@ -115,7 +117,14 @@ export default function NewQuote() {
 
   // Update a line
   function updateLine(index, field, value) {
-    setLines(prev => prev.map((l, i) => (i === index ? { ...l, [field]: value } : l)));
+    setLines(prev => prev.map((l, i) => {
+      if (i !== index) return l;
+      const updated = { ...l, [field]: value };
+      if (field === 'product_id' && value && productMap[value]) {
+        updated.unit = productMap[value].unit;
+      }
+      return updated;
+    }));
   }
 
   function addLine() {
@@ -164,6 +173,7 @@ export default function NewQuote() {
         quote_id: quoteId,
         product_id: Number(l.product_id),
         qty: Number(l.qty) || 0,
+        unit: l.unit,
         with_install: l.with_install,
         labor_cost: l.with_install ? (Number(l.labor_cost) || 0) : 0,
         client_price: Number(l.client_price) || 0,
@@ -272,7 +282,7 @@ export default function NewQuote() {
               </div>
 
               <div>
-                <label>כמות {product ? `(${product.unit})` : ''}</label>
+                <label>כמות</label>
                 <input
                   type="number"
                   value={line.qty}
@@ -284,7 +294,19 @@ export default function NewQuote() {
               </div>
 
               <div>
-                <label>מחיר ללקוח ליח׳ ₪</label>
+                <label>יחידה</label>
+                <select
+                  value={line.unit}
+                  onChange={e => updateLine(i, 'unit', e.target.value)}
+                >
+                  <option value='מ"א'>מ"א</option>
+                  <option value='מ"ר'>מ"ר</option>
+                  <option value="יח'">יח'</option>
+                </select>
+              </div>
+
+              <div>
+                <label>מחיר ללקוח ל{line.unit} ₪</label>
                 <input
                   type="number"
                   value={line.client_price}
@@ -310,7 +332,7 @@ export default function NewQuote() {
 
               {line.with_install && (
                 <div>
-                  <label>עלות עובד למטר ₪</label>
+                  <label>עלות עובד ל{line.unit} ₪</label>
                   <input
                     type="number"
                     value={line.labor_cost}
@@ -359,7 +381,7 @@ export default function NewQuote() {
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
         <button
-          className="btn btn-primary btn-block"
+          className="btn btn-orange btn-block"
           onClick={save}
           disabled={saving}
         >
