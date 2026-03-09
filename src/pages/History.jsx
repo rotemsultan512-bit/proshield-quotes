@@ -61,7 +61,7 @@ export default function History() {
                 <div style={{ display: 'flex', gap: 12, marginTop: 4, fontSize: '0.8rem' }}>
                   <span style={{ color: 'var(--text-dim)' }}>עלות: {formatCurrency(cost)}</span>
                   <span style={{ color: 'var(--accent)', fontWeight: 600 }}>ללקוח: {formatCurrency(client)}</span>
-                  <span style={{ color: profit >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>
+                  <span style={{ color: profit >= 0 ? 'var(--accent)' : 'var(--red)', fontWeight: 600 }}>
                     רווח: {formatCurrency(profit)}
                   </span>
                 </div>

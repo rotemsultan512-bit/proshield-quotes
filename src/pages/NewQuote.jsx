@@ -326,7 +326,7 @@ export default function NewQuote() {
         );
       })}
 
-      <button className="btn btn-orange btn-block" onClick={addLine} style={{ marginBottom: 16 }}>
+      <button className="btn btn-primary btn-block" onClick={addLine} style={{ marginBottom: 16 }}>
         + הוסף שורה
       </button>
 
@@ -359,7 +359,7 @@ export default function NewQuote() {
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
         <button
-          className="btn btn-green btn-block"
+          className="btn btn-primary btn-block"
           onClick={save}
           disabled={saving}
         >
