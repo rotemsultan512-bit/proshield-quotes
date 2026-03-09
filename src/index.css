@@ -1,0 +1,184 @@
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #334155;
+  --border: #475569;
+  --text: #f1f5f9;
+  --text-dim: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --green: #22c55e;
+  --red: #ef4444;
+  --radius: 10px;
+}
+
+html { font-size: 15px; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  direction: rtl;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Shell ── */
+.app { display: flex; flex-direction: column; min-height: 100dvh; }
+.page { flex: 1; padding: 16px; padding-bottom: 80px; max-width: 600px; margin: 0 auto; width: 100%; }
+
+/* ── Bottom Nav ── */
+.nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.nav a {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; padding: 10px 0; font-size: 0.7rem;
+  color: var(--text-dim); text-decoration: none; transition: color .2s;
+}
+.nav a.active { color: var(--accent); }
+.nav a svg { width: 22px; height: 22px; }
+
+/* ── Header ── */
+.header {
+  text-align: center; padding: 16px 0 8px;
+  font-size: 1.2rem; font-weight: 700; color: var(--accent);
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+/* ── Form controls ── */
+label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
+
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color .2s;
+}
+input:focus, select:focus { border-color: var(--accent); }
+input[type="number"] { -moz-appearance: textfield; }
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 20px;
+  border: none; border-radius: var(--radius);
+  font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: background .2s, transform .1s;
+  color: #fff;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-green { background: var(--green); }
+.btn-red { background: var(--red); }
+.btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+.btn-block { width: 100%; }
+
+/* ── Table-like rows ── */
+.row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
+.row > * { flex: 1; }
+.row .sm { flex: 0 0 70px; }
+.row .xs { flex: 0 0 50px; }
+
+/* ── Toggle ── */
+.toggle {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  font-size: 0.85rem; color: var(--text);
+}
+.toggle input { display: none; }
+.toggle-track {
+  width: 40px; height: 22px; background: var(--surface2);
+  border-radius: 11px; position: relative; transition: background .2s;
+}
+.toggle input:checked + .toggle-track { background: var(--accent); }
+.toggle-track::after {
+  content: ''; position: absolute; top: 2px; right: 2px;
+  width: 18px; height: 18px; background: #fff;
+  border-radius: 50%; transition: transform .2s;
+}
+.toggle input:checked + .toggle-track::after { transform: translateX(-18px); }
+
+/* ── Summary box ── */
+.summary {
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 14px; margin-top: 12px;
+}
+.summary-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.9rem; }
+.summary-row.total { font-weight: 700; font-size: 1.05rem; color: var(--green); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+
+/* ── History list ── */
+.history-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.history-item:hover { border-color: var(--accent); }
+.history-item .title { font-weight: 600; }
+.history-item .meta { font-size: 0.8rem; color: var(--text-dim); }
+
+/* ── Product table (pricing) ── */
+.product-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.product-row .name { flex: 1; }
+.product-row input, .product-row select { width: 80px; flex: 0 0 auto; padding: 6px 8px; font-size: 0.85rem; }
+.product-row .unit-select { width: 60px; }
+
+/* ── Empty state ── */
+.empty { text-align: center; padding: 40px 0; color: var(--text-dim); }
+
+/* ── Line item card ── */
+.line-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.line-card .line-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.line-card .line-total {
+  font-weight: 600; color: var(--green); font-size: 0.9rem;
+}
+.line-fields { display: flex; flex-wrap: wrap; gap: 8px; }
+.line-fields > div { flex: 1; min-width: 100px; }
+.line-fields > div.full { flex-basis: 100%; }
+
+/* ── Animations ── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fadeIn .25s ease-out; }

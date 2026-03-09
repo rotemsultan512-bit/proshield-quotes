@@ -1,0 +1,75 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+
+export default function History() {
+  const [quotes, setQuotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => { fetchQuotes(); }, []);
+
+  async function fetchQuotes() {
+    const { data } = await supabase
+      .from('quotes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    setQuotes(data || []);
+    setLoading(false);
+  }
+
+  async function deleteQuote(e, id) {
+    e.stopPropagation();
+    if (!confirm('למחוק הצעה זו?')) return;
+    await supabase.from('quotes').delete().eq('id', id);
+    setQuotes(prev => prev.filter(q => q.id !== id));
+  }
+
+  function formatDate(d) {
+    return new Date(d).toLocaleDateString('he-IL', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  function formatCurrency(n) {
+    return Number(n).toLocaleString('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 });
+  }
+
+  return (
+    <div className="fade-in">
+      <div className="header">היסטוריית הצעות</div>
+
+      {loading ? (
+        <div className="empty">טוען...</div>
+      ) : quotes.length === 0 ? (
+        <div className="empty">אין הצעות מחיר שמורות</div>
+      ) : (
+        quotes.map(q => (
+          <div
+            className="history-item"
+            key={q.id}
+            onClick={() => navigate(`/history/${q.id}`)}
+          >
+            <div>
+              <div className="title">{q.project_name}</div>
+              <div className="meta">{q.client_name} · {formatDate(q.created_at)}</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontWeight: 600, color: 'var(--green)' }}>
+                {formatCurrency(q.sale_total)}
+              </span>
+              <button
+                className="btn btn-red btn-sm"
+                onClick={e => deleteQuote(e, q.id)}
+                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
